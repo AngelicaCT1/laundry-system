@@ -2,13 +2,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable react/display-name */
 import React, { useEffect, useState } from 'react';
-import {
-  DateDetail,
-  DiasAttencion,
-  HoraAttencion,
-  handleGetInfoPago,
-  roundDecimal,
-} from '../../../../../../../utils/functions';
+import { DiasAttencion, HoraAttencion, handleGetInfoPago, roundDecimal } from '../../../../../../../utils/functions';
 import './ticket.scss';
 
 import Pet from './pet.jpg';
@@ -44,6 +38,26 @@ const Ticket = React.forwardRef((props, ref) => {
       console.error(`No se pudo obtener información de la promoción - ${error}`);
       throw error; // Lanza el error para que pueda ser capturado por Promise.all
     }
+  };
+
+  const handleShowDateTime = (date, hour) => {
+    // Concatena la fecha y hora
+    const datetimeString = `${date} ${hour}`;
+
+    // Parsea la fecha y hora usando Moment.js
+    const dateTime = moment(datetimeString, 'YYYY-MM-DD HH:mm');
+
+    // Formatea la fecha y la hora según los requisitos
+    const formattedDate = dateTime.format('D [de] MMMM, YYYY');
+    const formattedTime = dateTime.format('dddd / hh:mm a');
+
+    // Construye el objeto de respuesta
+    const result = {
+      FInfoD: formattedDate,
+      SInfoD: formattedTime,
+    };
+
+    return result;
   };
 
   const spaceLine = (txt) => {
@@ -101,7 +115,10 @@ const Ticket = React.forwardRef((props, ref) => {
         <div className="container-ticket" ref={ref}>
           <div className="body-orden-service">
             <div className="receipt_header">
-              <h1>LAVANDERIA {InfoNegocio?.name}</h1>
+              <div className="name-bussiness">
+                <h1>LAVANDERIA</h1>
+                <h1>{InfoNegocio?.name}</h1>
+              </div>
               <table className="info-table">
                 <tbody>
                   <tr>
@@ -131,7 +148,7 @@ const Ticket = React.forwardRef((props, ref) => {
             </div>
             <div className="info-client">
               <div className="cod-rec">
-                <h1 className="cod-rec">ORDEN DE SERVICIO : {String(infoOrden.codRecibo).padStart(4, '0')}</h1>
+                <h1 className="cod-rec">N° Orden : {infoOrden.codRecibo}</h1>
               </div>
               <div className="info-detail">
                 <table className="tb-date">
@@ -141,7 +158,10 @@ const Ticket = React.forwardRef((props, ref) => {
                       <td>
                         <div className="date-time">
                           <span>
-                            {DateDetail(infoOrden.dateRecepcion.fecha)} - {infoOrden.dateRecepcion.hora}
+                            {handleShowDateTime(infoOrden.dateRecepcion.fecha, infoOrden.dateRecepcion.hora).SInfoD}
+                          </span>
+                          <span>
+                            {handleShowDateTime(infoOrden.dateRecepcion.fecha, infoOrden.dateRecepcion.hora).FInfoD}
                           </span>
                         </div>
                       </td>
@@ -151,7 +171,10 @@ const Ticket = React.forwardRef((props, ref) => {
                       <td>
                         <div className="date-time">
                           <span>
-                            {DateDetail(infoOrden.datePrevista.fecha)} - {infoOrden.datePrevista.hora}
+                            {handleShowDateTime(infoOrden.datePrevista.fecha, infoOrden.datePrevista.hora).SInfoD}
+                          </span>
+                          <span>
+                            {handleShowDateTime(infoOrden.datePrevista.fecha, infoOrden.datePrevista.hora).FInfoD}
                           </span>
                         </div>
                       </td>
@@ -177,10 +200,9 @@ const Ticket = React.forwardRef((props, ref) => {
                 <table>
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Item</th>
+                      <th></th>
+                      <th>Producto</th>
                       <th>Cantidad</th>
-                      {/* <th>{""}</th> */}
                       <th>Subtotal</th>
                     </tr>
                   </thead>
@@ -188,10 +210,9 @@ const Ticket = React.forwardRef((props, ref) => {
                     {infoOrden.Producto.filter((p) => p.categoria !== 'Delivery').map((p, index) => (
                       <React.Fragment key={`${infoOrden._id}-${index}`}>
                         <tr>
-                          <td>{index + 1}</td>
+                          <td>•</td>
                           <td>{p.producto}</td>
-                          <td>{roundDecimal(p.cantidad)} </td>
-                          {/* <td>{""}</td> */}
+                          <td>{p.producto === 'Ropa x Kilo' ? roundDecimal(p.cantidad) : parseInt(p.cantidad)}</td>
                           <td>{roundDecimal(p.total)}</td>
                         </tr>
                         {forW && p.descripcion ? (
@@ -261,7 +282,7 @@ const Ticket = React.forwardRef((props, ref) => {
                 Pago : {simboloMoneda} {handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto).pago}
               </h2>
               <h3 className={`${infoOrden.factura ? null : 'sf'} estado`}>
-                {handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto).estado}
+                {handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto).estado.toUpperCase()}
               </h3>
               {infoOrden.factura ? <h2 className="cangeo-factura">Canjear Orden de Servicio por Factura</h2> : null}
             </div>
@@ -280,7 +301,7 @@ const Ticket = React.forwardRef((props, ref) => {
                       <h2 style={{ fontSize: '0.8em', textAlign: 'justify' }}>{promo.descripcion}</h2>
                       <h2 className="cod-i">codigo: {promo.codigoCupon}</h2>
                     </div>
-                    <div>
+                    <div className="img-pet">
                       <img src={Pet} alt="" />
                     </div>
                   </div>
