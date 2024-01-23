@@ -34,7 +34,7 @@ const index = () => {
           : infoOrden.Pago === 'Incompleto'
           ? `con monto pendiente de *${simboloMoneda}${sPago.falta}*`
           : `con monto a pagar *${simboloMoneda}${infoOrden.totalNeto}*`
-      }, su entrega es el día ${DateDetail(infoOrden.datePrevista.fecha)}`;
+      }, su entrega es el día ${DateDetail(infoOrden.datePrevista.fecha)} / ${infoOrden.datePrevista.hora}`;
       for (let index = 0; index < 2; index++) {
         WSendMessage(mensaje, number);
       }
