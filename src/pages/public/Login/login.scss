@@ -16,20 +16,10 @@ $input-placeholder-states:
     display: grid;
     place-items: center;
     .logo {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        display: block;
-        z-index: 100;
-        transition: all 250ms linear;
-        border-radius: 20px;
-        background: rgba(194, 194, 194, 0.631372549);
+        width: 100%;
+        height: min-content;
+        fill: #fff;
         padding: 10px;
-        img {
-            height: 64px;
-            width: auto;
-            display: block;
-        }
     }
     a {
         cursor: pointer;
@@ -99,7 +89,7 @@ $input-placeholder-states:
             position: relative;
             width: 440px;
             max-width: 100%;
-            height: 400px;
+            height: 440px;
             -webkit-transform-style: preserve-3d;
             transform-style: preserve-3d;
             perspective: 800px;

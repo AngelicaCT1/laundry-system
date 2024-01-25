@@ -8,6 +8,8 @@ import Logout from '../../Logout/Logout';
 import './headerCoord.scss';
 import { oldRecords } from '../../../../services/global';
 
+import { ReactComponent as Logo } from '../../../../utils/img/Logo/logoMasterClean.svg';
+
 const HeaderUser = () => {
   const userState = useSelector((store) => store.user.infoUsuario);
   const location = useLocation();
@@ -118,6 +120,7 @@ const HeaderUser = () => {
       <div className="logo">
         {/* <div className={`logo ${userState.rol === Roles.ADMIN ? 'admin-style' : 'coord-style'}`}> */}
         {/* <img src={INFO_COMPANY.logo_dir} alt="" /> */}
+        <Logo className="svg-logo" />
         <h1>{InfoNegocio?.name}</h1>
       </div>
       <button type="button" className="hamburger" onClick={toggleNavBar}>
