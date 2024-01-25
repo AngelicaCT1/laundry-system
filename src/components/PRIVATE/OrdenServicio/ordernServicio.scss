@@ -22,6 +22,7 @@
                 justify-content: space-between;
                 .info-t {
                     display: flex;
+                    gap: 45px;
                     .ico-lava-ya {
                         width: 150px;
                         height: 150px;
@@ -66,7 +67,8 @@
                     border-radius: 4px;
                     text-align: center;
                     padding: 10px;
-
+                    height: min-content;
+                    margin: auto 10px;
                     h2 {
                         margin: 0;
                         font-family: "Arial";
