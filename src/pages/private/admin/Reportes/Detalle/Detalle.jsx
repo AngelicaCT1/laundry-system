@@ -18,6 +18,7 @@ const Detalle = ({ infoD }) => {
   const [statePago, setStatePago] = useState();
   const dispatch = useDispatch();
   const iDelivery = useSelector((state) => state.delivery.infoDeliveryID);
+  const ListUsuarios = useSelector((state) => state.user.listUsuario);
 
   const calculateHeight = (description, fontSize, width, padding, lineHeightValue) => {
     // Crear un elemento de textarea oculto para medir su contenido.
@@ -60,6 +61,11 @@ const Detalle = ({ infoD }) => {
   const handleHour = (hora) => {
     const hora12 = moment(hora, 'HH:mm').format('h:mm A');
     return hora12;
+  };
+
+  const handleInfoUser = (idUser) => {
+    const usuario = ListUsuarios.find((usuario) => usuario._id === idUser);
+    return usuario ? usuario.name : 'No Encontrado';
   };
 
   useEffect(() => {
@@ -167,6 +173,14 @@ const Detalle = ({ infoD }) => {
         </tbody>
       </table>
       <div className="list-extra">
+        <div className="item-extra attent">
+          <div className="title">
+            <span>Atendido por :</span>
+          </div>
+          <div className="monto">
+            <span>{ordern?.attendedBy.name}</span>
+          </div>
+        </div>
         {ordern?.Factura === true ? (
           <div className="item-extra fact">
             <div className="title">
@@ -204,6 +218,7 @@ const Detalle = ({ infoD }) => {
                 {p.total}
               </span>
               <span className="_metodopago">{cLetter(p.metodoPago)}</span>
+              <span>{handleInfoUser(p.idUser)}</span>
               <span className="_ico">
                 {p.metodoPago === 'Tarjeta' ? (
                   <i className="fa-solid fa-credit-card" />
@@ -215,7 +230,7 @@ const Detalle = ({ infoD }) => {
               </span>
             </li>
           ))}
-          <li className="i-final">
+          <div className="i-final">
             <span></span>
             <span className="if-estado"></span>
             <span className="if-monto">
@@ -230,7 +245,7 @@ const Detalle = ({ infoD }) => {
               </div>
               <div>
                 <div className="l-info">
-                  <span>Estado :</span>
+                  <span>Pago :</span>
                 </div>
                 <div> {statePago?.estado}</div>
               </div>
@@ -247,7 +262,7 @@ const Detalle = ({ infoD }) => {
               ) : null}
             </span>
             <span></span>
-          </li>
+          </div>
         </ul>
       </div>
       <table className="info-table">

@@ -173,9 +173,15 @@ const Ticket = React.forwardRef((props, ref) => {
                 <div className="i-cliente">
                   <table className="tb-info-cliente">
                     <tbody>
+                      {infoOrden.celular ? (
+                        <tr>
+                          <td>Telefono : </td>
+                          <td>&nbsp;&nbsp;{infoOrden.celular}</td>
+                        </tr>
+                      ) : null}
                       <tr>
-                        <td>Telefono : </td>
-                        <td>&nbsp;&nbsp;{infoOrden.celular}</td>
+                        <td>Atentido por : </td>
+                        <td>&nbsp;&nbsp;{infoOrden.attendedBy.name}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -203,7 +209,7 @@ const Ticket = React.forwardRef((props, ref) => {
                         <tr>
                           <td>•</td>
                           <td>{p.producto}</td>
-                          <td>{p.producto === 'Ropa x Kilo' ? roundDecimal(p.cantidad) : parseInt(p.cantidad)}</td>
+                          <td>{p.producto === 'Ropa x Kilo' ? roundDecimal(p.cantidad) : roundDecimal(p.cantidad)}</td>
                           <td>{roundDecimal(p.total)}</td>
                         </tr>
                         {forW && p.descripcion ? (

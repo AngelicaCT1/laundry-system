@@ -96,3 +96,8 @@ li {
   display: grid;
   place-content: center;
 }
+
+/* Aumenta tamaño de Dropdown de Select de mantain */
+/* .mantine-Select-dropdown {
+  width: max-content !important;
+} */
