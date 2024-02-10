@@ -13,7 +13,8 @@
     button {
         position: relative;
         height: 50px;
-        width: 130px;
+        padding: 0 10px;
+        width: min-content;
         font-size: 13px;
         letter-spacing: 1px;
         border-radius: 5px;
@@ -265,6 +266,15 @@
                 padding: 8px;
                 border: 1px solid #ccc;
             }
+
+            tr {
+                td {
+                    &:first-child {
+                        width: max-content;
+                    }
+                }
+            }
+
             .md-pago {
                 position: absolute;
                 right: 0px;
