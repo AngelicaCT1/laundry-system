@@ -137,9 +137,10 @@ const HeaderUser = () => {
             <div className="right" />
           </div>
           <li>
+            {/* 
             <Link to={`./${PrivateRoutes.PERSONAL}`} className="active">
               ASISTENCIA
-            </Link>
+            </Link>  */}
           </li>
           <li>
             <Link
