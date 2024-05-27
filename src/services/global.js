@@ -1,6 +1,6 @@
 export const timeZone = "America/Cancun"; //
-// Mostrar Opcion de Registrar Ordenes Antiguas
-export const oldOrder = true;
+// Factura
+export const showFactura = false;
 // Tipo de Moneda
 export const tipoMoneda = "MXN"; // PEN
 // Formato de la moneda (separacion de miles - decimales) segun la configuracion regional
@@ -10,11 +10,11 @@ export const nameMoneda = "Pesos"; // Soles
 export const ingresoDigital = "TRANSFERENCIA"; // YAPE
 
 export const politicaAbandono = {
-  mResaltado: "El plazo maximo para retirar las prendas es de 20 dias ",
-  mGeneral: `despues de entregada a la lavanderia; vencido el plazo se donara a instituciones de caridad.No hay lugar a
-   reclamo una ves retirada la prenda No nos reposabilizamos por prendas que se destiñan por malos tintes, botones o adornos 
-   que no resistan al lavado o planchado, por las prendas que se deterioren por estar demasiado usadas, tejidos y confecciones defectuosas.
-    La indemnización por ropa perdida o malograda se ajusta de acuerdo a la ley de Profeco que equivale a 3 veces del valor de la nota total de venta.`,
+  mResaltado: "El plazo máximo para retirar las prendas es de 20 días ",
+  mGeneral: `después de entregada a la lavandería; vencido el plazo, se donará a instituciones de caridad. 
+  No hay lugar al reclamo una vez retirada la prenda. No nos responsabilizamos por prendas que se destiñan, 
+  por malos tintes, botones o adornos que no resistan al lavado o planchado, por las prendas que se deterioren 
+  por estar demasiado usadas, tejidos y confecciones defectuosas.`,
 };
 
 export const documento = "INE"; // DNI

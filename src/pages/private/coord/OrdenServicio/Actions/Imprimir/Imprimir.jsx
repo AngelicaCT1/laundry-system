@@ -40,28 +40,22 @@ const index = () => {
     const sPago = handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto);
 
     if (number) {
-      let mensaje = `¡Hola *${infoOrden.Nombre}*! Le saluda la *Lavanderia ${InfoNegocio.name}*, Su Orden es la *#${infoOrden.codRecibo}* con los siguientes items:\n\n`;
-
-      // Iterar sobre cada producto
-      infoOrden.Items.forEach((item) => {
-        mensaje += `• ${item.cantidad} ${item.simboloMedida} de "${item.item}" - ${simboloMoneda}${item.total}\n`;
-      });
-
-      // Añadir el monto total y detalles de entrega con un salto de línea antes
-      mensaje += `\nMonto ${
+      const mensaje = `¡Hola *${infoOrden.Nombre}* ! Le saluda la *Lavanderia ${
+        InfoNegocio.name
+      }*, Su Orden es la *#${infoOrden.codRecibo}*, ${
         sPago.estado === "Completo"
-          ? `total *PAGADO*`
+          ? `ya esta *PAGADO*`
           : sPago.estado === "Incompleto"
-          ? `pendiente de *${simboloMoneda}${sPago.falta}*`
-          : `total a pagar *${simboloMoneda}${infoOrden.totalNeto}*`
+          ? `con monto pendiente de *${simboloMoneda}${sPago.falta}*`
+          : `con monto a pagar *${simboloMoneda}${infoOrden.totalNeto}*`
       }, su entrega es el día ${DateDetail(
         infoOrden.datePrevista.fecha
       )} / ${moment(infoOrden.datePrevista.hora, "HH:mm").format("hh:mm A")}`;
-
-      // Envío del mensaje
-      WSendMessage(mensaje, number);
+      for (let index = 0; index < 2; index++) {
+        WSendMessage(mensaje, number);
+      }
     } else {
-      Notify("Cliente sin número", "", "fail");
+      Notify("Cliente sin numero", "", "fail");
     }
   };
 
