@@ -1,6 +1,6 @@
 export const timeZone = "America/Cancun"; //
 // Factura
-export const showFactura = false;
+export const showFactura = true;
 // Tipo de Moneda
 export const tipoMoneda = "MXN"; // PEN
 // Formato de la moneda (separacion de miles - decimales) segun la configuracion regional
