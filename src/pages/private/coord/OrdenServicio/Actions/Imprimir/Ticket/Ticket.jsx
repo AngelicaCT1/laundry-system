@@ -18,8 +18,10 @@ import axios from "axios";
 import {
   nameImpuesto,
   politicaAbandono,
+  showPuntosOnTicket,
 } from "../../../../../../../services/global";
 import { useSelector } from "react-redux";
+import { Notify } from "../../../../../../../utils/notify/Notify";
 
 const Ticket = React.forwardRef((props, ref) => {
   const sizePaper80 = true;
@@ -29,6 +31,7 @@ const Ticket = React.forwardRef((props, ref) => {
   const [infoPuntosCli, setInfoPuntosCli] = useState(null);
 
   const InfoServicios = useSelector((state) => state.servicios.listServicios);
+  const ListClientes = useSelector((state) => state.clientes.listClientes);
   const InfoCategorias = useSelector(
     (state) => state.categorias.listCategorias
   );
@@ -62,26 +65,16 @@ const Ticket = React.forwardRef((props, ref) => {
       );
       return response.data;
     } catch (error) {
+      Notify(
+        "CUPON ENTREGADO NO ENCONTRADO",
+        "Promocion fue Eliminada",
+        "warning"
+      );
+
       // Maneja los errores aquí
       console.error(
         `No se pudo obtener información de la promoción - ${error}`
       );
-      throw error; // Lanza el error para que pueda ser capturado por Promise.all
-    }
-  };
-
-  const handleGetInfoPuntosCliente = async (dni) => {
-    try {
-      const response = await axios.get(
-        `${
-          import.meta.env.VITE_BACKEND_URL
-        }/api/lava-ya/get-specific-cliente/${dni}`
-      );
-      return response.data;
-    } catch (error) {
-      // Maneja los errores aquí
-      console.error(`No se pudo obtener información de la puntos - ${error}`);
-      throw error; // Lanza el error para que pueda ser capturado por Promise.all
     }
   };
 
@@ -137,45 +130,36 @@ const Ticket = React.forwardRef((props, ref) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (infoOrden?.gift_promo.length > 0) {
-        const promos = infoOrden.gift_promo;
-
-        try {
+      setSPago(handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto));
+      if (infoOrden) {
+        if (infoOrden?.gift_promo.length > 0) {
           const results = await Promise.all(
-            promos.map(async (promo) => {
-              return await handleGetInfoPromo(promo.codigoCupon);
+            infoOrden.gift_promo.map(async (promo) => {
+              try {
+                return await handleGetInfoPromo(promo.codigoCupon);
+              } catch {
+                return null; // Retorna null si hay un error
+              }
             })
           );
 
-          setListPromos(results);
-        } catch (error) {
-          console.error(
-            "Error al obtener información de las promociones:",
-            error
-          );
-        }
-      }
-      if (
-        infoOrden?.descuento > 0 &&
-        infoOrden?.dni &&
-        infoOrden?.modoDescuento === "Puntos"
-      ) {
-        try {
-          const res = await handleGetInfoPuntosCliente(infoOrden?.dni);
-          setInfoPuntosCli(res);
-        } catch (error) {
-          console.error("Error al obtener información de las Puntos :", error);
+          // Filtrar resultados no válidos
+          setListPromos(results.filter((result) => result));
         }
       }
     };
 
     fetchData();
   }, [infoOrden]);
+
   useEffect(() => {
-    if (infoOrden) {
-      setSPago(handleGetInfoPago(infoOrden.ListPago, infoOrden.totalNeto));
+    if (infoOrden?.idCliente) {
+      const infoCliente = ListClientes.find(
+        (cliente) => cliente._id === infoOrden.idCliente
+      );
+      setInfoPuntosCli(infoCliente);
     }
-  }, [infoOrden]);
+  }, [infoOrden, ListClientes]);
 
   return (
     <>
@@ -212,12 +196,12 @@ const Ticket = React.forwardRef((props, ref) => {
                   <table className="info-table">
                     <tbody>
                       <tr>
-                        <td>Direccion:</td>
+                        <td>DIRECCION :</td>
                         <td>{InfoNegocio?.direccion}</td>
                       </tr>
                       {InfoNegocio.contacto.length > 0 ? (
                         <tr>
-                          <td>Telefono:</td>
+                          <td>TELEFONO :</td>
                           <td className="u-line">
                             {InfoNegocio.contacto.map((num, index) => (
                               <span key={index}>
@@ -231,7 +215,7 @@ const Ticket = React.forwardRef((props, ref) => {
                         </tr>
                       ) : null}
                       <tr>
-                        <td>Horario:</td>
+                        <td>HORARIO :</td>
                         <td className="m-line">
                           {InfoNegocio.horario.map((hor, index) => (
                             <span key={index}>{hor.horario}</span>
@@ -256,7 +240,7 @@ const Ticket = React.forwardRef((props, ref) => {
                 <table className="tb-date">
                   <tbody>
                     <tr>
-                      <td>Ingreso:</td>
+                      <td>INGRESO :</td>
                       <td>
                         <div className="date-time">
                           {sizePaper80 ? (
@@ -290,7 +274,7 @@ const Ticket = React.forwardRef((props, ref) => {
                       </td>
                     </tr>
                     <tr>
-                      <td>Entrega:</td>
+                      <td>ENTREGA :</td>
                       <td>
                         <div className="date-time">
                           {sizePaper80 ? (
@@ -334,18 +318,18 @@ const Ticket = React.forwardRef((props, ref) => {
                     <tbody>
                       {infoOrden.direccion ? (
                         <tr className="f-direccion">
-                          <td>Direccion : </td>
+                          <td>DIRECCION : </td>
                           <td>&nbsp;&nbsp;{infoOrden.direccion}</td>
                         </tr>
                       ) : null}
                       {infoOrden.celular ? (
                         <tr className="f-telf">
-                          <td>Telefono : </td>
+                          <td>TELEFONO : </td>
                           <td>&nbsp;&nbsp;{infoOrden.celular}</td>
                         </tr>
                       ) : null}
                       <tr className="f-attend">
-                        <td>Atentido por : </td>
+                        <td>ATENDIDO POR : </td>
                         <td>&nbsp;&nbsp;{infoOrden.attendedBy.name}</td>
                       </tr>
                     </tbody>
@@ -359,11 +343,11 @@ const Ticket = React.forwardRef((props, ref) => {
                   <thead>
                     <tr>
                       <th></th>
-                      <th>Item</th>
-                      <th>Cantidad</th>
+                      <th>ITEM</th>
+                      <th>CANTIDAD</th>
                       {!tipoTicket ? (
                         <>
-                          <th>Total</th>
+                          <th>TOTAL</th>
                         </>
                       ) : null}
                     </tr>
@@ -396,7 +380,7 @@ const Ticket = React.forwardRef((props, ref) => {
                   {!tipoTicket ? (
                     <tfoot>
                       <tr>
-                        <td colSpan="3">Subtotal :</td>
+                        <td colSpan="3">SUBTOTAL :</td>
                         <td>
                           {formatThousandsSeparator(
                             infoOrden.subTotal -
@@ -408,7 +392,7 @@ const Ticket = React.forwardRef((props, ref) => {
                       </tr>
                       {infoOrden?.Modalidad === "Delivery" ? (
                         <tr>
-                          <td colSpan="3">Delivery :</td>
+                          <td colSpan="3">DELIVERY :</td>
                           <td>{montoDelivery()}</td>
                         </tr>
                       ) : null}
@@ -423,7 +407,7 @@ const Ticket = React.forwardRef((props, ref) => {
                         </tr>
                       ) : null}
                       <tr>
-                        <td colSpan="3">Descuento :</td>
+                        <td colSpan="3">DESCUENTO :</td>
                         <td>
                           {infoOrden.descuento
                             ? formatThousandsSeparator(infoOrden.descuento)
@@ -431,17 +415,17 @@ const Ticket = React.forwardRef((props, ref) => {
                         </td>
                       </tr>
                       <tr>
-                        <td colSpan="3">Total a Pagar :</td>
+                        <td colSpan="3">TOTAL A PAGAR :</td>
                         <td>{formatThousandsSeparator(infoOrden.totalNeto)}</td>
                       </tr>
                       {sPago?.estado === "Incompleto" ? (
                         <>
                           <tr>
-                            <td colSpan="3">A Cuenta :</td>
+                            <td colSpan="3">A CUENTA :</td>
                             <td>{formatThousandsSeparator(sPago?.pago)}</td>
                           </tr>
                           <tr>
-                            <td colSpan="3">Deuda Pendiente :</td>
+                            <td colSpan="3">DEUDA PENDIENTE :</td>
                             <td>{formatThousandsSeparator(sPago?.falta)}</td>
                           </tr>
                         </>
@@ -516,6 +500,14 @@ const Ticket = React.forwardRef((props, ref) => {
                   <h3 className={`${infoOrden.factura ? null : "sf"} estado`}>
                     {sPago?.estado.toUpperCase()}
                   </h3>
+                  {showPuntosOnTicket &&
+                  +infoOrden?.descuento >= 0 &&
+                  infoOrden?.modoDescuento === "Promocion" &&
+                  infoPuntosCli?.scoreTotal !== 0 ? (
+                    <h2 className="points-earned">
+                      Puntos Acumulados : {parseInt(infoPuntosCli?.scoreTotal)}
+                    </h2>
+                  ) : null}
                   {infoOrden.factura ? (
                     <h2 className="cangeo-factura">
                       Canjear Orden de Servicio por Factura

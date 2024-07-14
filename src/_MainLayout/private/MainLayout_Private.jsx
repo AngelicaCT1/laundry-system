@@ -17,9 +17,14 @@ import {
   LS_changeListPago,
   LS_changePagoOnOrden,
   LS_newOrder,
-  LS_updateListOrder,
-  LS_updateOrder,
-  setOrderServiceId,
+  setFilterBy,
+  updateAnulacionOrden,
+  updateCancelarEntregaOrden,
+  updateDetalleOrden,
+  updateEntregaOrden,
+  updateFinishReserva,
+  updateLocationOrden,
+  updateNotaOrden,
 } from "../../redux/states/service_order";
 
 import { notifications } from "@mantine/notifications";
@@ -52,12 +57,14 @@ import TimeOut from "../out-of-time.png";
 import moment from "moment";
 import LoaderSpiner from "../../components/LoaderSpinner/LoaderSpiner";
 import { socket } from "../../utils/socket/connect";
-import { GetCuadre } from "../../redux/actions/aCuadre";
+import { GetCuadre, GetPagos_OnCuadreToday } from "../../redux/actions/aCuadre";
 import { GetListUser } from "../../redux/actions/aUser";
 import { getListCategorias } from "../../redux/actions/aCategorias";
 import { getServicios } from "../../redux/actions/aServicios";
 import { GetTipoGastos } from "../../redux/actions/aTipoGasto";
 import { updateRegistrosNCuadrados } from "../../redux/states/cuadre";
+import { getListClientes } from "../../redux/actions/aClientes";
+import { LS_changeCliente } from "../../redux/states/clientes";
 
 const PrivateMasterLayout = (props) => {
   const [
@@ -71,6 +78,10 @@ const PrivateMasterLayout = (props) => {
   ] = useDisclosure(false);
 
   const InfoUsuario = useSelector((store) => store.user.infoUsuario);
+  const { filterListDefault } = useSelector(
+    (state) => state.negocio.infoNegocio
+  );
+
   const [data, setData] = useState();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -110,6 +121,8 @@ const PrivateMasterLayout = (props) => {
           dispatch(GetListUser()),
           dispatch(getListCategorias()),
           dispatch(getServicios()),
+          dispatch(getListClientes()),
+          dispatch(GetPagos_OnCuadreToday()),
         ];
 
         const responses = await Promise.all(promises);
@@ -163,7 +176,6 @@ const PrivateMasterLayout = (props) => {
             const currentPath = new URL(window.location.href).pathname;
             const dir = `/${PrivateRoutes.PRIVATE}/${PrivateRoutes.FINISH_ORDEN_SERVICE_PENDING}/${r._id}`;
             if (dir !== currentPath) {
-              dispatch(setOrderServiceId(false));
               navigate(dir);
             }
           },
@@ -182,17 +194,38 @@ const PrivateMasterLayout = (props) => {
   }, [reserved]);
 
   useEffect(() => {
-    // ORDER
+    dispatch(setFilterBy(filterListDefault));
+  }, [filterListDefault]);
+
+  useEffect(() => {
+    // ORDEN ADD
     socket.on("server:newOrder", (data) => {
       dispatch(LS_newOrder(data));
     });
-    socket.on("server:orderUpdated", (data) => {
-      dispatch(LS_updateOrder(data));
+    // ORDEN UPDATE
+    socket.on("server:updateOrder(ITEMS)", (data) => {
+      dispatch(updateDetalleOrden(data));
     });
-    socket.on("server:updateListOrder", (data) => {
-      dispatch(LS_updateListOrder(data));
+    socket.on("server:updateOrder(FINISH_RESERVA)", (data) => {
+      dispatch(updateFinishReserva(data));
     });
-    socket.on("server:changeCuadre", (data) => {
+    socket.on("server:updateOrder(ENTREGA)", (data) => {
+      dispatch(updateEntregaOrden(data));
+    });
+    socket.on("server:updateOrder(CANCELAR_ENTREGA)", (data) => {
+      dispatch(updateCancelarEntregaOrden(data));
+    });
+    socket.on("server:updateOrder(ANULACION)", (data) => {
+      dispatch(updateAnulacionOrden(data));
+    });
+    socket.on("server:updateOrder(NOTA)", (data) => {
+      dispatch(updateNotaOrden(data));
+    });
+    socket.on("server:updateOrder(LOCATION)", (data) => {
+      dispatch(updateLocationOrden(data));
+    });
+    // CUADRE
+    socket.on("server:changeCuadre", () => {
       dispatch(GetCuadre({ date: DateCurrent().format4, id: InfoUsuario._id }));
     });
     // PAGO
@@ -214,6 +247,10 @@ const PrivateMasterLayout = (props) => {
     // PUNTOS
     socket.on("server:cPuntos", (data) => {
       dispatch(LS_updatePuntos(data));
+    });
+    // CLIENTES
+    socket.on("server:cClientes", (data) => {
+      dispatch(LS_changeCliente(data));
     });
     // IMPUESTOS
     socket.on("server:cImpuesto", (data) => {
@@ -293,23 +330,26 @@ const PrivateMasterLayout = (props) => {
     return () => {
       // Remove the event listener when the component unmounts
       socket.off("server:newOrder");
-      socket.off("server:updateCodigo");
-
-      socket.off("server:orderUpdated");
+      socket.off("server:updateOrder(ITEMS)");
+      socket.off("server:updateOrder(FINISH_RESERVA)");
+      socket.off("server:updateOrder(ENTREGA)");
+      socket.off("server:updateOrder(CANCELAR_ENTREGA)");
+      socket.off("server:updateOrder(ANULACION)");
+      socket.off("server:updateOrder(NOTA)");
+      socket.off("server:updateOrder(LOCATION)");
+      socket.off("server:changeCuadre");
       socket.off("server:cPago");
       socket.off("server:cGasto");
-
-      socket.off("server:updateListOrder");
-
-      socket.off("server:cPricePrendas");
+      socket.off("server:updateCodigo");
       socket.off("server:cPuntos");
+      socket.off("server:cClientes");
       socket.off("server:cImpuesto");
       socket.off("server:cPromotions");
       socket.off("server:cNegocio");
       socket.off("server:onLogin");
       socket.off("server:onFirtLogin");
-      socket.off("server:onDeleteAccount");
       socket.off("server:onChangeUser");
+      socket.off("server:onDeleteAccount");
     };
   }, []);
 

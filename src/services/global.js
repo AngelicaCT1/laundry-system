@@ -1,13 +1,18 @@
-export const timeZone = "America/Cancun"; //
+// Zona Horaria
+export const timeZone = "America/Cancun";
+// Default Hora Prevista
+export const defaultHoraPrevista = "18:00";
 // Factura
 export const showFactura = true;
+// Mostrar Cuantos Puntos tiene el Cliente
+export const showPuntosOnTicket = true;
 // Tipo de Moneda
-export const tipoMoneda = "MXN"; // PEN
+export const tipoMoneda = "MXN";
 // Formato de la moneda (separacion de miles - decimales) segun la configuracion regional
-export const confMoneda = "es-MX"; // es-PE
-export const simboloMoneda = "$"; // S/
-export const nameMoneda = "Pesos"; // Soles
-export const ingresoDigital = "TRANSFERENCIA"; // YAPE
+export const confMoneda = "es-MX";
+export const simboloMoneda = "$";
+export const nameMoneda = "Pesos";
+export const ingresoDigital = ["TRANSFERENCIA"];
 
 export const politicaAbandono = {
   mResaltado: "El plazo máximo para retirar las prendas es de 20 días ",
@@ -37,5 +42,4 @@ export const MONTOS_BASE = [
   { monto: 0.5, cantidad: "", total: 0 },
   { monto: 0.2, cantidad: "", total: 0 },
   { monto: 0.1, cantidad: "", total: 0 },
-  // { monto: 0.05, cantidad: '', total: 0 },
 ];
