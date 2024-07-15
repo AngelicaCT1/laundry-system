@@ -9,22 +9,13 @@ import { useFormik } from "formik";
 import "./usuarios.scss";
 import { ReactComponent as Eliminar } from "../../../../../utils/img/OrdenServicio/eliminar.svg";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  DeleteUser,
-  EditUser,
-  GetListUser,
-  RegisterUser,
-} from "../../../../../redux/actions/aUser";
-import {
-  clearDuplicated,
-  LS_AddUser,
-  LS_DeleteUser,
-  LS_UpdateUser,
-  resetUser,
-} from "../../../../../redux/states/user";
+import { resetUser } from "../../../../../redux/states/user";
 import LoaderSpiner from "../../../../../components/LoaderSpinner/LoaderSpiner";
 import { socket } from "../../../../../utils/socket/connect";
 import { Roles } from "../../../../../models";
+import axios from "axios";
+import { Notify } from "../../../../../utils/notify/Notify";
+import { allowedRoles } from "../../../../../services/global";
 
 const baseState = {
   _id: "",
@@ -38,11 +29,11 @@ const baseState = {
 
 const Usuarios = () => {
   const dispatch = useDispatch();
-  const ListUsuarios = useSelector((state) => state.user.listUsuario);
   const InfoUsuario = useSelector((store) => store.user.infoUsuario);
-  const { warningDuplicated } = useSelector((state) => state.user);
   const [onEdit, setOnEdit] = useState(false);
   const [onLoading, setOnLoading] = useState(false);
+  const [ListUsuarios, setListUsuarios] = useState([]);
+  const [warningDuplicated, setWarningDuplicated] = useState([]);
   const [initialValues, setInitialValues] = useState(baseState);
 
   const validationSchema = Yup.object().shape({
@@ -62,16 +53,18 @@ const Usuarios = () => {
             "Debe contener al menos 5 caracteres (solo letras y números)"
           ),
   });
+
   const formik = useFormik({
     enableReinitialize: true,
     initialValues: initialValues,
     validationSchema: validationSchema,
     onSubmit: (values) => {
-      valiProcess(values);
+      validProcess(values);
     },
   });
 
-  const valiProcess = (data) => {
+  // Valid Editar o Registrar
+  const validProcess = (data) => {
     let confirmationEnabled = true;
 
     modals.openConfirmModal({
@@ -90,31 +83,11 @@ const Usuarios = () => {
       onConfirm: () => {
         if (confirmationEnabled) {
           confirmationEnabled = false;
+          setOnLoading(true);
           if (onEdit === true) {
-            setOnLoading(true);
-            dispatch(EditUser(data)).then((response) => {
-              if (response.payload) {
-                setOnEdit(false);
-                setInitialValues(baseState);
-                formik.resetForm();
-                setOnLoading(false);
-              }
-              if ("error" in response) {
-                setOnLoading(false);
-              }
-            });
+            handleEditUser({ ...data, estado: "update" });
           } else {
-            setOnLoading(true);
-            dispatch(RegisterUser(data)).then((response) => {
-              if (response.payload) {
-                setInitialValues(baseState);
-                formik.resetForm();
-                setOnLoading(false);
-              }
-              if ("error" in response) {
-                setOnLoading(false);
-              }
-            });
+            handleRegisterUser({ ...data, estado: "new" });
           }
         }
       },
@@ -133,10 +106,14 @@ const Usuarios = () => {
       labels: { confirm: "Si", cancel: "No" },
       confirmProps: { color: "red" },
       onCancel: () => console.log("Cancelado"),
-      onConfirm: () => {
+      onConfirm: async () => {
         if (confirmationEnabled) {
           confirmationEnabled = false;
-          dispatch(DeleteUser(id));
+          const userIdDeleted = await handleDeleteUser(id);
+          const newInfo = ListUsuarios.filter(
+            (user) => user._id !== userIdDeleted
+          );
+          setListUsuarios(newInfo);
         }
       },
     });
@@ -154,48 +131,183 @@ const Usuarios = () => {
     );
   };
 
-  const validEnabledAccion = (user) => {
-    return InfoUsuario.rol === "admin"
-      ? false
-      : InfoUsuario.rol === "gerente" && user.rol === "gerente"
-      ? user._id === InfoUsuario._id
-        ? false
-        : true
-      : InfoUsuario.rol === "gerente" && user.rol !== "admin"
-      ? false
-      : true;
+  const validEnabledAccion = (user, action) => {
+    let estado;
+    if (action === "update") {
+      if (InfoUsuario.rol === "admin" && user._id === InfoUsuario._id) {
+        estado = true;
+      } else if (user._id !== InfoUsuario._id && user.rol === "admin") {
+        estado = false;
+      } else {
+        estado = true;
+      }
+    } else {
+      if (InfoUsuario.rol === "admin") {
+        if (InfoUsuario.rol === "admin" && user._id === InfoUsuario._id) {
+          estado = false;
+        } else if (user._id !== InfoUsuario._id && user.rol === "admin") {
+          estado = false;
+        } else {
+          estado = true;
+        }
+      } else {
+        estado = false;
+      }
+    }
+
+    return estado;
+  };
+
+  const isRoleDisabled = (role) => {
+    let estado;
+    if (role === "admin") {
+      estado = true;
+    }
+    if (role === "gerente") {
+      estado = InfoUsuario.rol === Roles.ADMIN ? false : true;
+    }
+    if (role === "coord") {
+      estado =
+        InfoUsuario.rol === Roles.ADMIN || InfoUsuario.rol === Roles.GERENTE
+          ? false
+          : true;
+    }
+    if (role === "pers") {
+      estado = false;
+    }
+  };
+
+  const handleGetListUser = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/get-list-users`
+      );
+
+      setListUsuarios(response.data);
+    } catch (error) {
+      console.log(error.response.data.mensaje);
+      Notify("Error", "No se pudieron obtener los datos del usuario", "fail");
+    }
+  };
+
+  const handleEditUser = async (data) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/edit-user/${data._id}`,
+        data
+      );
+
+      socket.emit("client:onChangeUser", response.data._id);
+      socket.emit("client:onUpdateUser", response.data);
+
+      setOnEdit(false);
+      setInitialValues(baseState);
+      formik.resetForm();
+      setOnLoading(false);
+
+      setListUsuarios((prevList) => {
+        const newInfo = prevList.map((user) =>
+          user._id === response.data._id ? response.data : user
+        );
+        return newInfo;
+      });
+
+      Notify("Actualizacion", "Usuario Actualizado correctamente", "success");
+    } catch (error) {
+      const { data, status } = error.response;
+      console.log(data.mensaje);
+      setOnLoading(false);
+      if (status === 401) {
+        setWarningDuplicated(data.duplicados);
+        Notify("Error", "No se puedo editar por informacion Duplicada", "fail");
+      } else {
+        Notify("Error", "No se pudo editar los datos del usuario", "fail");
+      }
+    }
+  };
+
+  const handleRegisterUser = async (data) => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/register`,
+        data
+      );
+
+      socket.emit("client:onNewUser", response.data);
+
+      setInitialValues(baseState);
+      formik.resetForm();
+      setOnLoading(false);
+
+      setListUsuarios((prevList) => [...prevList, response.data]);
+
+      Notify(
+        "Usuario Agregado Exitosamente",
+        "Inicia Session para activar su cuenta, con el codigo enviado al correo",
+        "success"
+      );
+
+      return response.data;
+    } catch (error) {
+      const { data, status } = error.response;
+      setOnLoading(false);
+      if (status === 401) {
+        setWarningDuplicated(data.duplicados);
+        Notify("Error", "informacion Duplicada", "fail");
+      } else {
+        Notify("Error", "No se pudo registrar usuario", "fail");
+      }
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/api/lava-ya/delete-user/${userId}`
+      );
+      if (response.status === 200) {
+        socket.emit("client:onDeleteUser", response.data);
+        socket.emit("client:onDeleteAccount", response.data);
+        Notify("Usuario Eliminado", "", "success");
+        return response.data;
+      }
+    } catch (error) {
+      Notify("Error", "No se pudo Eliminar Usuario", "fail");
+      console.log(error.response.data.mensaje);
+    }
   };
 
   useEffect(() => {
-    if (ListUsuarios.length === 0) {
-      dispatch(GetListUser());
-    }
-  }, [ListUsuarios]);
-
-  // useEffect(() => {
-  //   if (warningDuplicated.length > 0) {
-  //     console.log(warningDuplicated);
-  //   }
-  // }, [warningDuplicated]);
+    handleGetListUser();
+  }, []);
 
   useEffect(() => {
     // Nuevo Usuario Agregado
-    socket.on("server:onNewUser", (data) => {
-      dispatch(LS_AddUser(data));
+    socket.on("server:onNewUser", (newUser) => {
+      setListUsuarios((prevList) => [...prevList, newUser]);
     });
 
     // Usuario Eliminado
-    socket.on("server:onDeleteUser", (data) => {
-      dispatch(LS_DeleteUser(data));
-      if (InfoUsuario._id === data) {
-        alert("Comunicado del Administrador : Su cuenta Fue Eliminada");
+    socket.on("server:onDeleteUser", (userIdDeleted) => {
+      setListUsuarios((prevList) => {
+        const newInfo = prevList.filter((user) => user._id !== userIdDeleted);
+        return newInfo;
+      });
+
+      if (InfoUsuario._id === userIdDeleted) {
+        alert("Comunicado del Administrador: Su cuenta Fue Eliminada");
         dispatch(resetUser());
       }
     });
 
     // Usuario Actualizado
-    socket.on("server:onUpdateUser", (data) => {
-      dispatch(LS_UpdateUser(data));
+    socket.on("server:onUpdateUser", (updatedUser) => {
+      setListUsuarios((prevList) => {
+        const newInfo = prevList.map((user) =>
+          user._id === updatedUser._id ? updatedUser : user
+        );
+        return newInfo;
+      });
     });
 
     return () => {
@@ -222,6 +334,7 @@ const Usuarios = () => {
                     type="button"
                     onClick={() => {
                       setOnEdit(false);
+                      setWarningDuplicated([]);
                       setInitialValues(baseState);
                     }}
                   >
@@ -272,10 +385,10 @@ const Usuarios = () => {
                   placeholder="Ingrese correo"
                   autoComplete="off"
                   required
-                  disabled={validEnabledAccion(initialValues)}
+                  // disabled={validEnabledAccion(initialValues)}
                   onChange={(e) => {
                     formik.setFieldValue("email", e.target.value);
-                    dispatch(clearDuplicated("correo"));
+                    // dispatch(clearDuplicated("correo"));
                   }}
                 />
                 {formik.errors.email &&
@@ -300,39 +413,13 @@ const Usuarios = () => {
                   searchable
                   // disabled={validEnabledAccion(initialValues)}
                   readOnly={
-                    initialValues._id === InfoUsuario._id ||
-                    initialValues.rol === Roles.GERENTE
+                    InfoUsuario.rol === Roles.GERENTE ||
+                    initialValues.rol === Roles.ADMIN
                   }
-                  data={[
-                    {
-                      value: "admin",
-                      label: "Administrador",
-                      disabled: true,
-                    },
-                    {
-                      value: "gerente",
-                      label: "Gerente",
-                      disabled: InfoUsuario.rol === Roles.ADMIN ? false : true,
-                    },
-                    {
-                      value: "coord",
-                      label: "Coordinador",
-                      disabled:
-                        InfoUsuario.rol === Roles.ADMIN ||
-                        InfoUsuario.rol === Roles.GERENTE
-                          ? false
-                          : true,
-                    },
-                    {
-                      value: "pers",
-                      label: "Personal",
-                      disabled:
-                        InfoUsuario.rol === Roles.ADMIN ||
-                        InfoUsuario.rol === Roles.GERENTE
-                          ? false
-                          : true,
-                    },
-                  ]}
+                  data={allowedRoles.map((item) => ({
+                    ...item,
+                    disabled: isRoleDisabled(item.value),
+                  }))}
                 />
                 {formik.errors.rol &&
                   formik.touched.rol &&
@@ -355,7 +442,7 @@ const Usuarios = () => {
                     required
                     onChange={(e) => {
                       formik.setFieldValue("usuario", e.target.value);
-                      dispatch(clearDuplicated("usuario"));
+                      // dispatch(clearDuplicated("usuario"));
                     }}
                   />
                   {formik.errors.usuario &&
@@ -427,11 +514,12 @@ const Usuarios = () => {
                     <td>{p.state}</td>
                     <td>
                       <div className="actions">
-                        {validEnabledAccion(p) === false ? (
+                        {validEnabledAccion(p, "update") ? (
                           <button
                             type="button"
                             className="btn-edit"
                             onClick={() => {
+                              setWarningDuplicated([]);
                               setInitialValues({
                                 _id: p?._id,
                                 name: p?.name,
@@ -448,18 +536,16 @@ const Usuarios = () => {
                           </button>
                         ) : null}
 
-                        {validEnabledAccion(p) === false ? (
-                          p._id === InfoUsuario._id ? null : (
-                            <button
-                              className="btn-delete"
-                              type="button"
-                              onClick={() => {
-                                validDeleteUsuario(p._id);
-                              }}
-                            >
-                              <i className="fas fa-user-times" />
-                            </button>
-                          )
+                        {validEnabledAccion(p, "delete") ? (
+                          <button
+                            className="btn-delete"
+                            type="button"
+                            onClick={() => {
+                              validDeleteUsuario(p._id);
+                            }}
+                          >
+                            <i className="fas fa-user-times" />
+                          </button>
                         ) : null}
                       </div>
                     </td>

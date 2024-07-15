@@ -2,6 +2,26 @@
 export const timeZone = "America/Cancun";
 // Default Hora Prevista
 export const defaultHoraPrevista = "18:00";
+// Roles validaos
+export const allowedRoles = [
+  {
+    value: "admin",
+    label: "Administrador",
+  },
+  // {
+  //   value: "gerente",
+  //   label: "Gerente",
+  // },
+  {
+    value: "coord",
+    label: "Coordinador",
+  },
+  // {
+  //   value: "pers",
+  //   label: "Personal",
+  // },
+];
+
 // Factura
 export const showFactura = true;
 // Mostrar Cuantos Puntos tiene el Cliente
