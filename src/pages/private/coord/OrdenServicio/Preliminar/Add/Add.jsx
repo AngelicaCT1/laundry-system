@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable no-undef */
 // eslint-disable-next-line no-unused-vars
@@ -7,14 +8,15 @@ import OrdenServicio from "../../../../../../components/PRIVATE/OrdenServicio/Or
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 
-import { AddOrdenServices } from "../../../../../../redux/actions/aOrdenServices";
 import LoaderSpiner from "../../../../../../components/LoaderSpinner/LoaderSpiner";
 import { setLastRegister } from "../../../../../../redux/states/service_order";
 
-import "./tienda.scss";
+import "./add.scss";
 import { PrivateRoutes } from "../../../../../../models";
+import { AddOrdenServices } from "../../../../../../redux/actions/aOrdenServices";
+import { Button } from "@mantine/core";
 
-const Tienda = () => {
+const Add = ({ setMode }) => {
   const [redirect, setRedirect] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -22,14 +24,14 @@ const Tienda = () => {
   const { lastRegister } = useSelector((state) => state.orden);
   const InfoUsuario = useSelector((state) => state.user.infoUsuario);
 
-  const handleRegistrar = async (data) => {
+  const handleRegistrarPreliminar = async (data) => {
     const { infoOrden, infoPago, rol } = data;
 
     // Crear la nueva orden con los datos necesarios
     const nuevaOrden = {
       infoOrden: {
         ...infoOrden,
-        estado: "registrado",
+        estado: "preliminar",
         typeRegistro: "normal",
       },
       infoPago,
@@ -69,11 +71,22 @@ const Tienda = () => {
   return (
     <>
       {redirect === false ? (
-        <div className="content-tienda">
+        <div className="content-add-preliminar">
+          <div className="header-action-preliminar">
+            <Button
+              type="button"
+              color="blue"
+              onClick={() => {
+                setMode("List");
+              }}
+            >
+              Lista de Ordenes de Recojo
+            </Button>
+          </div>
           <OrdenServicio
             titleMode="REGISTRAR"
-            mode={"NEW"}
-            onAction={handleRegistrar}
+            mode={"PRELIMINARY"}
+            onAction={handleRegistrarPreliminar}
             infoDefault={null}
           />
         </div>
@@ -86,4 +99,4 @@ const Tienda = () => {
   );
 };
 
-export default Tienda;
+export default Add;

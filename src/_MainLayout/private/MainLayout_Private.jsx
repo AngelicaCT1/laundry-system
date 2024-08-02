@@ -10,17 +10,21 @@ import {
 } from "../../components/PRIVATE/Header/index";
 import { PrivateRoutes, PublicRoutes, Roles } from "../../models/index";
 import { GetCodigos } from "../../redux/actions/aCodigo";
-import { GetOrdenServices_DateRange } from "../../redux/actions/aOrdenServices";
-import { GetMetas } from "../../redux/actions/aMetas";
-import { DateCurrent, GetFirstFilter } from "../../utils/functions";
 import {
+  GetOrdenServices_Last,
+  GetOrdenServices_Preliminar,
+} from "../../redux/actions/aOrdenServices";
+import { GetMetas } from "../../redux/actions/aMetas";
+import { DateCurrent } from "../../utils/functions";
+import {
+  changeOrder,
   LS_changePagoOnOrden,
-  LS_newOrder,
   setFilterBy,
   updateAnulacionOrden,
   updateCancelarEntregaOrden,
   updateDetalleOrden,
   updateEntregaOrden,
+  updateFinishRegistroPreliminar,
   updateFinishReserva,
   updateLocationOrden,
   updateNotaOrden,
@@ -62,6 +66,8 @@ import { GetTipoGastos } from "../../redux/actions/aTipoGasto";
 import { updateRegistrosNCuadrados } from "../../redux/states/cuadre";
 import { getListClientes } from "../../redux/actions/aClientes";
 import { LS_changeCliente } from "../../redux/states/clientes";
+import { LS_changeService } from "../../redux/states/servicios";
+import { LS_changeCategoria } from "../../redux/states/categorias";
 
 const PrivateMasterLayout = (props) => {
   const [
@@ -102,12 +108,7 @@ const PrivateMasterLayout = (props) => {
     const fetchData = async () => {
       try {
         const promises = [
-          dispatch(
-            GetOrdenServices_DateRange({
-              dateInicio: GetFirstFilter().formatoD[0],
-              dateFin: GetFirstFilter().formatoD[1],
-            })
-          ),
+          dispatch(GetOrdenServices_Last()),
           dispatch(GetCodigos()),
           dispatch(GetTipoGastos()),
           dispatch(GetMetas()),
@@ -119,6 +120,7 @@ const PrivateMasterLayout = (props) => {
           dispatch(getServicios()),
           dispatch(getListClientes()),
           dispatch(GetPagos_OnCuadreToday()),
+          // dispatch(GetOrdenServices_Preliminar()),
         ];
 
         const responses = await Promise.all(promises);
@@ -195,8 +197,8 @@ const PrivateMasterLayout = (props) => {
 
   useEffect(() => {
     // ORDEN ADD
-    socket.on("server:newOrder", (data) => {
-      dispatch(LS_newOrder(data));
+    socket.on("server:changeOrder", (data) => {
+      dispatch(changeOrder(data));
     });
     // ORDEN UPDATE
     socket.on("server:updateOrder(ITEMS)", (data) => {
@@ -219,6 +221,9 @@ const PrivateMasterLayout = (props) => {
     });
     socket.on("server:updateOrder(LOCATION)", (data) => {
       dispatch(updateLocationOrden(data));
+    });
+    socket.on("server:updateOrder(FINISH_REGISTRO_PRELIMINAR)", (data) => {
+      dispatch(updateFinishRegistroPreliminar(data));
     });
     // CUADRE
     socket.on("server:changeCuadre", () => {
@@ -317,10 +322,27 @@ const PrivateMasterLayout = (props) => {
         );
       }
     });
+    socket.on("server:onDeleteAccount", (data) => {
+      if (InfoUsuario._id === data) {
+        _handleShowModal(
+          "Administracion",
+          "Su cuenta ha sido ELIMINADA",
+          "delete"
+        );
+      }
+    });
+    // SERVICIO
+    socket.on("server:cService", (data) => {
+      dispatch(LS_changeService(data));
+    });
+    // CATEGORIA
+    socket.on("server:cCategoria", (data) => {
+      dispatch(LS_changeCategoria(data));
+    });
 
     return () => {
       // Remove the event listener when the component unmounts
-      socket.off("server:newOrder");
+      socket.off("server:changeOrder");
       socket.off("server:updateOrder(ITEMS)");
       socket.off("server:updateOrder(FINISH_RESERVA)");
       socket.off("server:updateOrder(ENTREGA)");
@@ -328,6 +350,7 @@ const PrivateMasterLayout = (props) => {
       socket.off("server:updateOrder(ANULACION)");
       socket.off("server:updateOrder(NOTA)");
       socket.off("server:updateOrder(LOCATION)");
+      socket.off("server:updateOrder(FINISH_REGISTRO_PRELIMINAR)");
       socket.off("server:changeCuadre");
       socket.off("server:cPago");
       socket.off("server:cGasto");
@@ -338,9 +361,10 @@ const PrivateMasterLayout = (props) => {
       socket.off("server:cPromotions");
       socket.off("server:cNegocio");
       socket.off("server:onLogin");
-      socket.off("server:onFirtLogin");
       socket.off("server:onChangeUser");
       socket.off("server:onDeleteAccount");
+      socket.off("server:cService");
+      socket.off("server:cCategoria");
     };
   }, []);
 

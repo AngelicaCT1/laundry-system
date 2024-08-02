@@ -21,9 +21,15 @@ import moment from "moment";
 
 const index = () => {
   const { id } = useParams();
-  const infoOrden = useSelector((state) =>
-    state.orden.registered.find((item) => item._id === id)
-  );
+  const infoOrden = useSelector((state) => {
+    const registered = state.orden.registered;
+    const preliminar = state.orden.preliminary;
+
+    return (
+      registered.find((item) => item._id === id) ||
+      preliminar.find((item) => item._id === id)
+    );
+  });
   const InfoNegocio = useSelector((state) => state.negocio.infoNegocio);
 
   const [showDescripcion, setDescription] = useState(false);
@@ -105,6 +111,7 @@ const index = () => {
           </div>
         ) : null}
       </div>
+
       <div className="actions">
         <SwtichModel
           title="Tipo Ticket :"
