@@ -19,6 +19,7 @@ import {
   nameImpuesto,
   politicaAbandono,
   showPuntosOnTicket,
+  simboloMoneda,
 } from "../../../../../../../services/global";
 import { useSelector } from "react-redux";
 import { Notify } from "../../../../../../../utils/notify/Notify";
@@ -583,8 +584,8 @@ const Ticket = React.forwardRef((props, ref) => {
                               {infoOrden?.descuento.info.map((dsc, index) => (
                                 <li key={index}>
                                   <span>
-                                    {dsc.item}&nbsp; ({dsc.descuentoPorcentaje}%
-                                    desct.)
+                                    {dsc.item}&nbsp; {simboloMoneda}
+                                    {dsc.descuentoPorcentaje}&nbsp; desct.
                                   </span>
                                 </li>
                               ))}
